@@ -1,0 +1,26 @@
+{
+  "run_id": "ghi789",
+  "generated_at": "2026-02-16T00:00:00+00:00",
+  "repo": "economic-youtube-headline-skill",
+  "results": [
+    {
+      "status": "ended_live",
+      "video": {
+        "video_id": "dQw4w9WgXcQ",
+        "url": "https://www.youtube.com/live/dQw4w9WgXcQ",
+        "channel_name": "Live Channel",
+        "title": "Live Title",
+        "was_live": true
+      },
+      "transcript_chars": 0,
+      "partial": {
+        "is_partial": true,
+        "coverage_ratio": null,
+        "reason": "live_ended_transcript_pending"
+      },
+      "headlines": [],
+      "warnings": ["Ended live video detected but transcript is unavailable."],
+      "error": null
+    }
+  ]
+}

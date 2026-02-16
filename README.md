@@ -1,0 +1,60 @@
+# economic-youtube-headline-skill
+
+경제 유튜브 영상을 영상 단위로 요약해서, 각 영상별로 **채널명 / 영상 제목 / 링크 / 헤드라인**을 출력하는 스킬 레포지토리입니다.
+
+## Features
+
+- 종료된 라이브 영상 포함 처리 (`ended_live` 상태)
+- 환경변수 기반 설정 (`EYT_HEADLINE_*`)
+- Markdown / JSON 출력
+- Contract v1 JSON Schema 포함
+
+## Quickstart
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+cp .env.example .env
+```
+
+```bash
+eyt-headline generate \
+  --video-url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+입력 파일 사용:
+
+```bash
+eyt-headline generate --input-file urls.txt
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---:|---|
+| `EYT_HEADLINE_MIN_TRANSCRIPT_CHARS` | `700` | `partial` vs `complete` 기준 문자 수 |
+| `EYT_HEADLINE_MAX_HEADLINES` | `5` | 영상당 최대 헤드라인 개수 |
+| `EYT_HEADLINE_ALLOW_PARTIAL` | `true` | 부분 자막 결과 허용 여부 |
+| `EYT_HEADLINE_TRANSCRIPT_LANGUAGES` | `ko,en` | 자막 조회 언어 우선순위 |
+| `EYT_HEADLINE_MOCK_TRANSCRIPT_TEXT` | _empty_ | 테스트용 강제 자막 텍스트 |
+
+## Output Status
+
+- `complete`: 자막 충분
+- `partial`: 자막 일부
+- `ended_live`: 라이브 종료 추정 + 자막 미준비
+- `unavailable`: 자막 없음
+- `error`: 처리 예외
+
+상세 룰은 `/docs/state-machine.md`를 참고하세요.
+
+## Test
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## License
+
+MIT

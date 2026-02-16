@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "economic-youtube-headline-skill"
+version = "0.1.0"
+description = "Per-video economic YouTube headline briefing with channel/title/link grouping."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "GBDO" }]
+dependencies = []
+
+[project.scripts]
+eyt-headline = "economic_youtube_headline_skill.cli:app"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

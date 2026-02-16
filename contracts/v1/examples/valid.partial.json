@@ -1,0 +1,26 @@
+{
+  "run_id": "def456",
+  "generated_at": "2026-02-16T00:00:00+00:00",
+  "repo": "economic-youtube-headline-skill",
+  "results": [
+    {
+      "status": "partial",
+      "video": {
+        "video_id": "dQw4w9WgXcQ",
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "channel_name": "Sample Channel",
+        "title": "Sample Title",
+        "was_live": false
+      },
+      "transcript_chars": 240,
+      "partial": {
+        "is_partial": true,
+        "coverage_ratio": 0.34,
+        "reason": "below_min_chars"
+      },
+      "headlines": ["핵심 이벤트 전 관망 심리 유지"],
+      "warnings": ["Partial transcript detected."],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "run_id": "abc123",
+  "generated_at": "2026-02-16T00:00:00+00:00",
+  "repo": "economic-youtube-headline-skill",
+  "results": [
+    {
+      "status": "complete",
+      "video": {
+        "video_id": "dQw4w9WgXcQ",
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "channel_name": "Sample Channel",
+        "title": "Sample Title",
+        "was_live": false
+      },
+      "transcript_chars": 1500,
+      "partial": {
+        "is_partial": false,
+        "coverage_ratio": null,
+        "reason": null
+      },
+      "headlines": ["금리 인하 기대가 위험자산 선호를 키움"],
+      "warnings": [],
+      "error": null
+    }
+  ]
+}
