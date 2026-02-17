@@ -1,6 +1,6 @@
 import re
 import ssl
-from typing import Callable
+from typing import Any, Callable
 from urllib.parse import parse_qs, quote_plus, urlparse
 from urllib.request import Request, urlopen
 
@@ -197,26 +197,50 @@ def _is_ssl_verification_error(exc: Exception) -> bool:
     return False
 
 
-def _transcript_segments_to_text(segments: list[dict]) -> str | None:
-    text = " ".join(seg.get("text", "").strip() for seg in segments if seg.get("text"))
-    return text.strip() or None
+def _transcript_segments_to_text(segments: Any) -> str | None:
+    snippets = getattr(segments, "snippets", segments)
+    if snippets is None:
+        return None
+
+    parts: list[str] = []
+    for snippet in snippets:
+        if isinstance(snippet, dict):
+            text = snippet.get("text")
+        else:
+            text = getattr(snippet, "text", None)
+        if isinstance(text, str):
+            trimmed = text.strip()
+            if trimmed:
+                parts.append(trimmed)
+    return " ".join(parts).strip() or None
 
 
 def _fetch_transcript_default(video_id: str, languages: list[str]) -> str | None:
     from youtube_transcript_api import YouTubeTranscriptApi
 
-    segments = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+    segments = YouTubeTranscriptApi().fetch(video_id, languages=languages)
     return _transcript_segments_to_text(segments)
 
 
 def _fetch_transcript_insecure(video_id: str, languages: list[str]) -> str | None:
     import requests
-    from youtube_transcript_api._transcripts import TranscriptListFetcher
+    from youtube_transcript_api import YouTubeTranscriptApi
 
     with requests.Session() as http_client:
-        http_client.verify = False
-        transcript_list = TranscriptListFetcher(http_client).fetch(video_id)
-        segments = transcript_list.find_transcript(languages).fetch()
+        original_request = http_client.request
+
+        def insecure_request(method: str, url: str, *args: Any, **kwargs: Any):  # noqa: ANN202
+            kwargs["verify"] = False
+            if url.startswith("https://www.youtube.com/api/timedtext"):
+                url = url.replace(
+                    "https://www.youtube.com/api/timedtext",
+                    "https://www.youtube-nocookie.com/api/timedtext",
+                    1,
+                )
+            return original_request(method, url, *args, **kwargs)
+
+        http_client.request = insecure_request  # type: ignore[assignment]
+        segments = YouTubeTranscriptApi(http_client=http_client).fetch(video_id, languages=languages)
     return _transcript_segments_to_text(segments)
 
 
