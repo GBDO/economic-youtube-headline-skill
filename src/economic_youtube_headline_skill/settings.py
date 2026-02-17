@@ -1,11 +1,38 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 
 def _bool_from_env(value: str | None, default: bool) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _load_dotenv_file(path: Path) -> None:
+    if not path.exists():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'\"")
+        if key:
+            os.environ.setdefault(key, value)
+
+
+def _load_dotenv() -> None:
+    cwd_dotenv = Path(".env")
+    repo_dotenv = Path(__file__).resolve().parents[2] / ".env"
+    _load_dotenv_file(repo_dotenv)
+    if cwd_dotenv.resolve() != repo_dotenv.resolve():
+        _load_dotenv_file(cwd_dotenv)
 
 
 @dataclass(slots=True)
@@ -20,6 +47,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
+        _load_dotenv()
         return cls(
             min_transcript_chars=max(
                 100, int(os.getenv("EYT_HEADLINE_MIN_TRANSCRIPT_CHARS", "700"))

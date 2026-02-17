@@ -18,6 +18,8 @@ pip install -e .
 cp .env.example .env
 ```
 
+`.env`는 실행 시 자동 로드됩니다(`source .env` 불필요).
+
 ```bash
 eyt-headline generate \
   --video-url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
