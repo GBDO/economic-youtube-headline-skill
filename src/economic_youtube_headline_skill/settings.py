@@ -41,6 +41,7 @@ class Settings:
     min_transcript_chars: int = 700
     max_headlines: int = 5
     allow_partial: bool = True
+    insecure_ssl_fallback: bool = True
     transcript_languages: str = "ko,en"
     target_channels: str = ""
     channel_video_limit: int = 5
@@ -61,6 +62,10 @@ class Settings:
             ),
             max_headlines=min(20, max(1, int(os.getenv("EYT_HEADLINE_MAX_HEADLINES", "5")))),
             allow_partial=_bool_from_env(os.getenv("EYT_HEADLINE_ALLOW_PARTIAL"), True),
+            insecure_ssl_fallback=_bool_from_env(
+                os.getenv("EYT_HEADLINE_INSECURE_SSL_FALLBACK"),
+                True,
+            ),
             transcript_languages=os.getenv("EYT_HEADLINE_TRANSCRIPT_LANGUAGES", "ko,en"),
             target_channels=os.getenv("EYT_HEADLINE_TARGET_CHANNELS", ""),
             channel_video_limit=min(

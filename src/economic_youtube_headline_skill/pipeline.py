@@ -25,10 +25,14 @@ def _build_video(url: str) -> VideoDescriptor:
     )
 
 
-def _resolve_transcript(video: VideoDescriptor, settings: Settings) -> str | None:
+def _resolve_transcript(video: VideoDescriptor, settings: Settings) -> tuple[str | None, list[str]]:
     if settings.mock_transcript_text:
-        return settings.mock_transcript_text
-    return fetch_transcript(video.video_id, settings.languages())
+        return settings.mock_transcript_text, []
+    return fetch_transcript(
+        video.video_id,
+        settings.languages(),
+        allow_insecure_ssl_fallback=settings.insecure_ssl_fallback,
+    )
 
 
 def run_pipeline(
@@ -42,14 +46,15 @@ def run_pipeline(
         if log_event:
             log_event("video_start", {"url": url})
         video = _build_video(url)
-        transcript = _resolve_transcript(video, settings)
+        transcript, transcript_warnings = _resolve_transcript(video, settings)
 
-        status, partial, warnings = classify_transcript_state(
+        status, partial, state_warnings = classify_transcript_state(
             was_live=video.was_live,
             transcript_text=transcript,
             min_transcript_chars=settings.min_transcript_chars,
             allow_partial=settings.allow_partial,
         )
+        warnings = [*transcript_warnings, *state_warnings]
 
         headlines: list[str] = []
         error = None

@@ -5,6 +5,7 @@
 ## Features
 
 - 종료된 라이브 영상 포함 처리 (`ended_live` 상태)
+- 자막 조회 SSL 인증 실패 시 `verify=False` 재시도(기본 활성화, 경고 출력)
 - 환경변수 기반 설정 (`EYT_HEADLINE_*`)
 - Markdown / JSON 출력
 - Contract v1 JSON Schema 포함
@@ -58,6 +59,7 @@ eyt-headline generate
 | `EYT_HEADLINE_MIN_TRANSCRIPT_CHARS` | `700` | `partial` vs `complete` 기준 문자 수 |
 | `EYT_HEADLINE_MAX_HEADLINES` | `5` | 영상당 최대 헤드라인 개수 |
 | `EYT_HEADLINE_ALLOW_PARTIAL` | `true` | 부분 자막 결과 허용 여부 |
+| `EYT_HEADLINE_INSECURE_SSL_FALLBACK` | `true` | SSL 인증 실패 시 `verify=False` 재시도 허용 여부 |
 | `EYT_HEADLINE_TRANSCRIPT_LANGUAGES` | `ko,en` | 자막 조회 언어 우선순위 |
 | `EYT_HEADLINE_TARGET_CHANNELS` | _empty_ | 채널 토큰 목록(쉼표 구분, 채널명/채널코드/핸들) |
 | `EYT_HEADLINE_CHANNEL_VIDEO_LIMIT` | `5` | 채널별 수집 영상 수 |
@@ -74,6 +76,12 @@ eyt-headline generate
 - `error`: 처리 예외
 
 상세 룰은 `/docs/state-machine.md`를 참고하세요.
+
+## Warning diagnostics
+
+- 자막 조회 실패 시 결과 `warnings`에 예외 클래스 + 메시지가 포함됩니다.
+- SSL 인증 실패로 `verify=False` 재시도를 수행한 경우, 해당 사실이 `warnings`에 기록됩니다.
+- 채널 토큰 해석 실패는 `invalid handle format`, `could not resolve channel id`, `no uploads feed`처럼 원인별 메시지로 출력됩니다.
 
 ## Test
 

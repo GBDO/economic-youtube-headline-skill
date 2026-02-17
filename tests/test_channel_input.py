@@ -52,6 +52,45 @@ class ChannelInputTest(unittest.TestCase):
         self.assertEqual(urls, ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"])
         self.assertEqual(warnings, [])
 
+    def test_collect_video_urls_reports_invalid_handle_format(self) -> None:
+        urls, warnings = collect_video_urls_from_channels(
+            ["@bad handle!"],
+            limit_per_channel=1,
+            fetch_text=lambda _url: None,
+        )
+        self.assertEqual(urls, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("invalid handle format", warnings[0])
+
+    def test_collect_video_urls_reports_unresolvable_channel(self) -> None:
+        urls, warnings = collect_video_urls_from_channels(
+            ["한국경제TV"],
+            limit_per_channel=1,
+            fetch_text=lambda _url: None,
+        )
+        self.assertEqual(urls, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("could not resolve channel id", warnings[0])
+
+    def test_collect_video_urls_reports_no_uploads_feed(self) -> None:
+        channel_id = "UC1234567890123456789012"
+
+        def fake_fetch(url: str) -> str | None:
+            if url == "https://www.youtube.com/@validhandle":
+                return f'"channelId":"{channel_id}"'
+            if "feeds/videos.xml" in url:
+                return None
+            return None
+
+        urls, warnings = collect_video_urls_from_channels(
+            ["@validhandle"],
+            limit_per_channel=1,
+            fetch_text=fake_fetch,
+        )
+        self.assertEqual(urls, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("no uploads feed", warnings[0])
+
 
 if __name__ == "__main__":
     unittest.main()
