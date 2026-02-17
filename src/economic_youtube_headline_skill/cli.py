@@ -1,9 +1,11 @@
 import argparse
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 from economic_youtube_headline_skill.pipeline import run_pipeline
 from economic_youtube_headline_skill.render import render_json, render_markdown
+from economic_youtube_headline_skill.session_logger import SessionLogger
 from economic_youtube_headline_skill.settings import Settings
 from economic_youtube_headline_skill.youtube import collect_video_urls_from_channels
 
@@ -46,10 +48,36 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_generate(args: argparse.Namespace) -> int:
     settings = Settings.from_env()
+    run_id = uuid4().hex[:10]
+    log_path = Path(settings.log_dir) / f"{settings.effective_session_id()}.log"
+    logger = SessionLogger(
+        repo="economic-youtube-headline-skill",
+        run_id=run_id,
+        session_id=settings.effective_session_id(),
+        log_path=log_path,
+    )
+
+    logger.info(
+        "run_start",
+        {
+            "input_video_urls": len(args.video_url),
+            "used_input_file": bool(args.input_file),
+            "configured_channels": settings.channels(),
+        },
+    )
+
     urls, warnings = _collect_urls(settings, args.video_url, args.input_file)
-    batch = run_pipeline(urls, settings)
+    logger.info("videos_collected", {"count": len(urls)})
+
+    batch = run_pipeline(
+        urls,
+        settings,
+        log_event=logger.info,
+        run_id=run_id,
+    )
     for warning in warnings:
         print(f"[warn] {warning}", file=sys.stderr)
+        logger.warn("channel_warning", {"message": warning})
 
     rendered = render_markdown(batch) if args.output_format == "markdown" else render_json(batch)
     if args.out:
@@ -57,8 +85,12 @@ def run_generate(args: argparse.Namespace) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(rendered, encoding="utf-8")
         print(f"Written: {out}")
+        logger.info("run_complete", {"output_format": args.output_format, "output_file": str(out)})
+        print(f"[log] {log_path}", file=sys.stderr)
         return 0
     print(rendered)
+    logger.info("run_complete", {"output_format": args.output_format, "output_file": None})
+    print(f"[log] {log_path}", file=sys.stderr)
     return 0
 
 

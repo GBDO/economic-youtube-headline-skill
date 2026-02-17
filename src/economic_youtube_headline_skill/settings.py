@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,6 +44,8 @@ class Settings:
     transcript_languages: str = "ko,en"
     target_channels: str = ""
     channel_video_limit: int = 5
+    log_dir: str = "logs"
+    session_id: str = ""
     mock_transcript_text: str | None = None
 
     @classmethod
@@ -59,6 +62,8 @@ class Settings:
             channel_video_limit=min(
                 50, max(1, int(os.getenv("EYT_HEADLINE_CHANNEL_VIDEO_LIMIT", "5")))
             ),
+            log_dir=os.getenv("EYT_HEADLINE_LOG_DIR") or os.getenv("EYT_LOG_DIR", "logs"),
+            session_id=os.getenv("EYT_HEADLINE_SESSION_ID") or os.getenv("EYT_SESSION_ID", ""),
             mock_transcript_text=os.getenv("EYT_HEADLINE_MOCK_TRANSCRIPT_TEXT") or None,
         )
 
@@ -67,3 +72,9 @@ class Settings:
 
     def channels(self) -> list[str]:
         return [item.strip() for item in self.target_channels.split(",") if item.strip()]
+
+    def effective_session_id(self) -> str:
+        token = self.session_id.strip()
+        if token:
+            return token
+        return datetime.now(timezone.utc).strftime("%Y%m%d")

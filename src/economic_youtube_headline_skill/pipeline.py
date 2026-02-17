@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Any, Callable
 from uuid import uuid4
 
 from economic_youtube_headline_skill.models import (
@@ -30,9 +31,16 @@ def _resolve_transcript(video: VideoDescriptor, settings: Settings) -> str | Non
     return fetch_transcript(video.video_id, settings.languages())
 
 
-def run_pipeline(urls: list[str], settings: Settings) -> BatchResult:
+def run_pipeline(
+    urls: list[str],
+    settings: Settings,
+    log_event: Callable[[str, dict[str, Any]], None] | None = None,
+    run_id: str | None = None,
+) -> BatchResult:
     results: list[HeadlineResult] = []
     for url in urls:
+        if log_event:
+            log_event("video_start", {"url": url})
         video = _build_video(url)
         transcript = _resolve_transcript(video, settings)
 
@@ -63,9 +71,19 @@ def run_pipeline(urls: list[str], settings: Settings) -> BatchResult:
                 error=error,
             )
         )
+        if log_event:
+            log_event(
+                "video_done",
+                {
+                    "video_id": video.video_id,
+                    "status": status.value,
+                    "headlines_count": len(headlines),
+                    "warnings_count": len(warnings),
+                },
+            )
 
     return BatchResult(
-        run_id=uuid4().hex[:10],
+        run_id=run_id or uuid4().hex[:10],
         generated_at=datetime.now(timezone.utc).isoformat(),
         results=results,
     )
