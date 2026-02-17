@@ -43,6 +43,13 @@ class Settings:
     allow_partial: bool = True
     insecure_ssl_fallback: bool = True
     transcript_languages: str = "ko,en"
+    proxy_http_url: str | None = None
+    proxy_https_url: str | None = None
+    webshare_proxy_username: str | None = None
+    webshare_proxy_password: str | None = None
+    webshare_proxy_locations: str = ""
+    webshare_retries_when_blocked: int = 10
+    transcript_request_delay_ms: int = 0
     target_channels: str = ""
     channel_video_limit: int = 5
     log_dir: str = "logs"
@@ -67,6 +74,19 @@ class Settings:
                 True,
             ),
             transcript_languages=os.getenv("EYT_HEADLINE_TRANSCRIPT_LANGUAGES", "ko,en"),
+            proxy_http_url=os.getenv("EYT_HEADLINE_PROXY_HTTP_URL") or None,
+            proxy_https_url=os.getenv("EYT_HEADLINE_PROXY_HTTPS_URL") or None,
+            webshare_proxy_username=os.getenv("EYT_HEADLINE_WEBSHARE_PROXY_USERNAME") or None,
+            webshare_proxy_password=os.getenv("EYT_HEADLINE_WEBSHARE_PROXY_PASSWORD") or None,
+            webshare_proxy_locations=os.getenv("EYT_HEADLINE_WEBSHARE_PROXY_LOCATIONS", ""),
+            webshare_retries_when_blocked=max(
+                0,
+                int(os.getenv("EYT_HEADLINE_WEBSHARE_RETRIES_WHEN_BLOCKED", "10")),
+            ),
+            transcript_request_delay_ms=max(
+                0,
+                int(os.getenv("EYT_HEADLINE_TRANSCRIPT_REQUEST_DELAY_MS", "0")),
+            ),
             target_channels=os.getenv("EYT_HEADLINE_TARGET_CHANNELS", ""),
             channel_video_limit=min(
                 50, max(1, int(os.getenv("EYT_HEADLINE_CHANNEL_VIDEO_LIMIT", "5")))

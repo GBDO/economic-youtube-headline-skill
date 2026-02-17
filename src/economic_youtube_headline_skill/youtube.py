@@ -10,6 +10,13 @@ _CHANNEL_ID_RE = re.compile(r"^UC[A-Za-z0-9_-]{22}$")
 _HANDLE_RE = re.compile(r"^@[A-Za-z0-9._-]{3,30}$")
 _CHANNEL_ID_IN_HTML_RE = re.compile(r'"channelId":"(UC[A-Za-z0-9_-]{22})"')
 _VIDEO_ID_IN_FEED_RE = re.compile(r"<yt:videoId>([A-Za-z0-9_-]{11})</yt:videoId>")
+_BLOCKED_TRANSCRIPT_WARNING = (
+    "YouTube transcript requests appear blocked/rate-limited. Configure proxy env vars: "
+    "EYT_HEADLINE_WEBSHARE_PROXY_USERNAME/EYT_HEADLINE_WEBSHARE_PROXY_PASSWORD "
+    "(optional EYT_HEADLINE_WEBSHARE_PROXY_LOCATIONS, "
+    "EYT_HEADLINE_WEBSHARE_RETRIES_WHEN_BLOCKED) or "
+    "EYT_HEADLINE_PROXY_HTTP_URL/EYT_HEADLINE_PROXY_HTTPS_URL."
+)
 
 
 def parse_video_id(url: str) -> str:
@@ -197,6 +204,57 @@ def _is_ssl_verification_error(exc: Exception) -> bool:
     return False
 
 
+def _is_blocked_request_error(exc: Exception) -> bool:
+    current: Exception | None = exc
+    seen: set[int] = set()
+    while current and id(current) not in seen:
+        seen.add(id(current))
+        class_name = current.__class__.__name__.lower()
+        text = str(current).lower()
+        if any(marker in class_name for marker in {"ipblocked", "requestblocked", "toomanyrequests"}):
+            return True
+        if "ipblocked" in text or "requestblocked" in text or "toomanyrequests" in text:
+            return True
+        if "too many requests" in text or "429" in text:
+            return True
+        response = getattr(current, "response", None)
+        if getattr(response, "status_code", None) == 429:
+            return True
+        next_exc = current.__cause__ or current.__context__
+        current = next_exc if isinstance(next_exc, Exception) else None
+    return False
+
+
+def build_proxy_config(
+    proxy_http_url: str | None = None,
+    proxy_https_url: str | None = None,
+    webshare_proxy_username: str | None = None,
+    webshare_proxy_password: str | None = None,
+    webshare_proxy_locations: str | None = None,
+    webshare_retries_when_blocked: int = 10,
+) -> Any | None:
+    username = (webshare_proxy_username or "").strip()
+    password = (webshare_proxy_password or "").strip()
+    if username and password:
+        from youtube_transcript_api.proxies import WebshareProxyConfig
+
+        locations = [item.strip() for item in (webshare_proxy_locations or "").split(",") if item.strip()]
+        return WebshareProxyConfig(
+            proxy_username=username,
+            proxy_password=password,
+            filter_ip_locations=locations or None,
+            retries_when_blocked=max(0, webshare_retries_when_blocked),
+        )
+
+    http_url = (proxy_http_url or "").strip() or None
+    https_url = (proxy_https_url or "").strip() or None
+    if http_url or https_url:
+        from youtube_transcript_api.proxies import GenericProxyConfig
+
+        return GenericProxyConfig(http_url=http_url, https_url=https_url)
+    return None
+
+
 def _transcript_segments_to_text(segments: Any) -> str | None:
     snippets = getattr(segments, "snippets", segments)
     if snippets is None:
@@ -215,14 +273,22 @@ def _transcript_segments_to_text(segments: Any) -> str | None:
     return " ".join(parts).strip() or None
 
 
-def _fetch_transcript_default(video_id: str, languages: list[str]) -> str | None:
+def _fetch_transcript_default(
+    video_id: str,
+    languages: list[str],
+    proxy_config: Any | None = None,
+) -> str | None:
     from youtube_transcript_api import YouTubeTranscriptApi
 
-    segments = YouTubeTranscriptApi().fetch(video_id, languages=languages)
+    segments = YouTubeTranscriptApi(proxy_config=proxy_config).fetch(video_id, languages=languages)
     return _transcript_segments_to_text(segments)
 
 
-def _fetch_transcript_insecure(video_id: str, languages: list[str]) -> str | None:
+def _fetch_transcript_insecure(
+    video_id: str,
+    languages: list[str],
+    proxy_config: Any | None = None,
+) -> str | None:
     import requests
     from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -240,7 +306,10 @@ def _fetch_transcript_insecure(video_id: str, languages: list[str]) -> str | Non
             return original_request(method, url, *args, **kwargs)
 
         http_client.request = insecure_request  # type: ignore[assignment]
-        segments = YouTubeTranscriptApi(http_client=http_client).fetch(video_id, languages=languages)
+        segments = YouTubeTranscriptApi(proxy_config=proxy_config, http_client=http_client).fetch(
+            video_id,
+            languages=languages,
+        )
     return _transcript_segments_to_text(segments)
 
 
@@ -248,10 +317,11 @@ def fetch_transcript(
     video_id: str,
     languages: list[str],
     allow_insecure_ssl_fallback: bool = True,
+    proxy_config: Any | None = None,
 ) -> tuple[str | None, list[str]]:
     warnings: list[str] = []
     try:
-        return _fetch_transcript_default(video_id, languages), warnings
+        return _fetch_transcript_default(video_id, languages, proxy_config=proxy_config), warnings
     except Exception as exc:
         if _is_ssl_verification_error(exc):
             diagnostic = _format_exception(exc)
@@ -265,12 +335,20 @@ def fetch_transcript(
                 "Transcript fetch SSL verification failed; retrying with insecure SSL fallback (verify=False)."
             )
             try:
-                return _fetch_transcript_insecure(video_id, languages), warnings
+                return _fetch_transcript_insecure(
+                    video_id,
+                    languages,
+                    proxy_config=proxy_config,
+                ), warnings
             except Exception as fallback_exc:
                 warnings.append(
                     f"Transcript fetch failed after insecure SSL fallback: {_format_exception(fallback_exc)}"
                 )
+                if _is_blocked_request_error(fallback_exc):
+                    warnings.append(_BLOCKED_TRANSCRIPT_WARNING)
                 return None, warnings
 
         warnings.append(f"Transcript fetch failed: {_format_exception(exc)}")
+        if _is_blocked_request_error(exc):
+            warnings.append(_BLOCKED_TRANSCRIPT_WARNING)
         return None, warnings

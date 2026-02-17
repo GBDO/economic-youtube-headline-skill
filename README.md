@@ -61,6 +61,13 @@ eyt-headline generate
 | `EYT_HEADLINE_ALLOW_PARTIAL` | `true` | 부분 자막 결과 허용 여부 |
 | `EYT_HEADLINE_INSECURE_SSL_FALLBACK` | `true` | SSL 인증 실패 시 `verify=False` 재시도 허용 여부 |
 | `EYT_HEADLINE_TRANSCRIPT_LANGUAGES` | `ko,en` | 자막 조회 언어 우선순위 |
+| `EYT_HEADLINE_PROXY_HTTP_URL` | _empty_ | Generic proxy HTTP URL (`EYT_HEADLINE_PROXY_HTTPS_URL`와 함께 또는 단독 사용) |
+| `EYT_HEADLINE_PROXY_HTTPS_URL` | _empty_ | Generic proxy HTTPS URL |
+| `EYT_HEADLINE_WEBSHARE_PROXY_USERNAME` | _empty_ | Webshare proxy username (설정 시 Generic보다 우선) |
+| `EYT_HEADLINE_WEBSHARE_PROXY_PASSWORD` | _empty_ | Webshare proxy password |
+| `EYT_HEADLINE_WEBSHARE_PROXY_LOCATIONS` | _empty_ | Webshare location code 목록(쉼표 구분, 예: `us,kr`) |
+| `EYT_HEADLINE_WEBSHARE_RETRIES_WHEN_BLOCKED` | `10` | Webshare 사용 시 차단 응답 재시도 횟수 |
+| `EYT_HEADLINE_TRANSCRIPT_REQUEST_DELAY_MS` | `0` | 영상별 자막 조회 사이 지연(ms) |
 | `EYT_HEADLINE_TARGET_CHANNELS` | _empty_ | 채널 토큰 목록(쉼표 구분, 채널명/채널코드/핸들) |
 | `EYT_HEADLINE_CHANNEL_VIDEO_LIMIT` | `5` | 채널별 수집 영상 수 |
 | `EYT_HEADLINE_LOG_DIR` | `logs` | 로그 디렉터리 (`EYT_LOG_DIR` 공통 변수도 지원) |
@@ -81,6 +88,7 @@ eyt-headline generate
 
 - 자막 조회 실패 시 결과 `warnings`에 예외 클래스 + 메시지가 포함됩니다.
 - SSL 인증 실패로 `verify=False` 재시도를 수행한 경우, 해당 사실이 `warnings`에 기록됩니다.
+- `IpBlocked`/`RequestBlocked`/`TooManyRequests`/HTTP `429` 징후가 감지되면 proxy 환경변수 설정 안내가 `warnings`에 추가됩니다.
 - 채널 토큰 해석 실패는 `invalid handle format`, `could not resolve channel id`, `no uploads feed`처럼 원인별 메시지로 출력됩니다.
 
 ## Test
