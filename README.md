@@ -29,6 +29,14 @@ eyt-headline generate \
 eyt-headline generate --input-file urls.txt
 ```
 
+채널 환경변수 기반 실행(채널명/채널코드/핸들):
+
+```bash
+export EYT_HEADLINE_TARGET_CHANNELS="UC_x5XG1OV2P6uZZ5FSM9Ttw,@mkbhd,한국경제TV"
+export EYT_HEADLINE_CHANNEL_VIDEO_LIMIT=3
+eyt-headline generate
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -37,6 +45,8 @@ eyt-headline generate --input-file urls.txt
 | `EYT_HEADLINE_MAX_HEADLINES` | `5` | 영상당 최대 헤드라인 개수 |
 | `EYT_HEADLINE_ALLOW_PARTIAL` | `true` | 부분 자막 결과 허용 여부 |
 | `EYT_HEADLINE_TRANSCRIPT_LANGUAGES` | `ko,en` | 자막 조회 언어 우선순위 |
+| `EYT_HEADLINE_TARGET_CHANNELS` | _empty_ | 채널 토큰 목록(쉼표 구분, 채널명/채널코드/핸들) |
+| `EYT_HEADLINE_CHANNEL_VIDEO_LIMIT` | `5` | 채널별 수집 영상 수 |
 | `EYT_HEADLINE_MOCK_TRANSCRIPT_TEXT` | _empty_ | 테스트용 강제 자막 텍스트 |
 
 ## Output Status

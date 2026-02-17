@@ -14,6 +14,8 @@ class Settings:
     max_headlines: int = 5
     allow_partial: bool = True
     transcript_languages: str = "ko,en"
+    target_channels: str = ""
+    channel_video_limit: int = 5
     mock_transcript_text: str | None = None
 
     @classmethod
@@ -25,8 +27,15 @@ class Settings:
             max_headlines=min(20, max(1, int(os.getenv("EYT_HEADLINE_MAX_HEADLINES", "5")))),
             allow_partial=_bool_from_env(os.getenv("EYT_HEADLINE_ALLOW_PARTIAL"), True),
             transcript_languages=os.getenv("EYT_HEADLINE_TRANSCRIPT_LANGUAGES", "ko,en"),
+            target_channels=os.getenv("EYT_HEADLINE_TARGET_CHANNELS", ""),
+            channel_video_limit=min(
+                50, max(1, int(os.getenv("EYT_HEADLINE_CHANNEL_VIDEO_LIMIT", "5")))
+            ),
             mock_transcript_text=os.getenv("EYT_HEADLINE_MOCK_TRANSCRIPT_TEXT") or None,
         )
 
     def languages(self) -> list[str]:
         return [item.strip() for item in self.transcript_languages.split(",") if item.strip()]
+
+    def channels(self) -> list[str]:
+        return [item.strip() for item in self.target_channels.split(",") if item.strip()]

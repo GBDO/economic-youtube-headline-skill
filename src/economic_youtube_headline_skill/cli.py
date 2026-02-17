@@ -1,21 +1,35 @@
 import argparse
+import sys
 from pathlib import Path
 
 from economic_youtube_headline_skill.pipeline import run_pipeline
 from economic_youtube_headline_skill.render import render_json, render_markdown
 from economic_youtube_headline_skill.settings import Settings
+from economic_youtube_headline_skill.youtube import collect_video_urls_from_channels
 
 
-def _collect_urls(video_urls: list[str], input_file: str | None) -> list[str]:
+def _collect_urls(settings: Settings, video_urls: list[str], input_file: str | None) -> tuple[list[str], list[str]]:
     collected: list[str] = []
     collected.extend(video_urls)
     if input_file:
         lines = [line.strip() for line in Path(input_file).read_text(encoding="utf-8").splitlines()]
         collected.extend([line for line in lines if line and not line.startswith("#")])
+
+    if not collected and settings.channels():
+        channel_urls, warnings = collect_video_urls_from_channels(
+            settings.channels(),
+            settings.channel_video_limit,
+        )
+        collected.extend(channel_urls)
+    else:
+        warnings = []
+
     deduped = list(dict.fromkeys(collected))
     if not deduped:
-        raise ValueError("At least one --video-url or --input-file is required.")
-    return deduped
+        raise ValueError(
+            "No input videos found. Provide --video-url/--input-file or set EYT_HEADLINE_TARGET_CHANNELS."
+        )
+    return deduped, warnings
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -32,8 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_generate(args: argparse.Namespace) -> int:
     settings = Settings.from_env()
-    urls = _collect_urls(args.video_url, args.input_file)
+    urls, warnings = _collect_urls(settings, args.video_url, args.input_file)
     batch = run_pipeline(urls, settings)
+    for warning in warnings:
+        print(f"[warn] {warning}", file=sys.stderr)
 
     rendered = render_markdown(batch) if args.output_format == "markdown" else render_json(batch)
     if args.out:
