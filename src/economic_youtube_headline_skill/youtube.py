@@ -1,4 +1,5 @@
 import re
+import ssl
 from typing import Callable
 from urllib.parse import parse_qs, quote_plus, urlparse
 from urllib.request import Request, urlopen
@@ -40,7 +41,12 @@ def _fetch_text(url: str, timeout: int = 15) -> str | None:
         with urlopen(request, timeout=timeout) as response:  # noqa: S310
             return response.read().decode("utf-8", errors="ignore")
     except Exception:
-        return None
+        try:
+            insecure_context = ssl._create_unverified_context()
+            with urlopen(request, timeout=timeout, context=insecure_context) as response:  # noqa: S310
+                return response.read().decode("utf-8", errors="ignore")
+        except Exception:
+            return None
 
 
 def _extract_channel_id_from_html(html: str | None) -> str | None:
