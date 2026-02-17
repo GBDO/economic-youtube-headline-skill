@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from economic_youtube_headline_skill.pipeline import run_pipeline
 from economic_youtube_headline_skill.render import render_json, render_markdown
+from economic_youtube_headline_skill.result_store import append_daily_result
 from economic_youtube_headline_skill.session_logger import SessionLogger
 from economic_youtube_headline_skill.settings import Settings
 from economic_youtube_headline_skill.youtube import collect_video_urls_from_channels
@@ -49,11 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
 def run_generate(args: argparse.Namespace) -> int:
     settings = Settings.from_env()
     run_id = uuid4().hex[:10]
-    log_path = Path(settings.log_dir) / f"{settings.effective_session_id()}.log"
+    date_key = settings.date_key()
+    log_path = Path(settings.log_dir) / f"headline-{date_key}.log"
     logger = SessionLogger(
         repo="economic-youtube-headline-skill",
         run_id=run_id,
-        session_id=settings.effective_session_id(),
+        session_id=date_key,
         log_path=log_path,
     )
 
@@ -75,6 +77,12 @@ def run_generate(args: argparse.Namespace) -> int:
         log_event=logger.info,
         run_id=run_id,
     )
+    result_path = append_daily_result(
+        result_dir=settings.result_dir,
+        date_key=date_key,
+        skill_slug="headline",
+        payload=batch.to_dict(),
+    )
     for warning in warnings:
         print(f"[warn] {warning}", file=sys.stderr)
         logger.warn("channel_warning", {"message": warning})
@@ -87,10 +95,12 @@ def run_generate(args: argparse.Namespace) -> int:
         print(f"Written: {out}")
         logger.info("run_complete", {"output_format": args.output_format, "output_file": str(out)})
         print(f"[log] {log_path}", file=sys.stderr)
+        print(f"[result] {result_path}", file=sys.stderr)
         return 0
     print(rendered)
     logger.info("run_complete", {"output_format": args.output_format, "output_file": None})
     print(f"[log] {log_path}", file=sys.stderr)
+    print(f"[result] {result_path}", file=sys.stderr)
     return 0
 
 

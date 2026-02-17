@@ -20,14 +20,17 @@ cp .env.example .env
 
 `.env`는 실행 시 자동 로드됩니다(`source .env` 불필요).
 
-동일 세션 로그를 한 파일에 모으려면:
+로그/결과 파일은 **날짜 기준으로 자동 통합**됩니다.
+
+- 로그: `headline-YYYYMMDD.log`
+- 결과: `headline-YYYYMMDD.jsonl`
+
+공통 디렉터리 예시:
 
 ```bash
 export EYT_LOG_DIR=/tmp/eyt-logs
-export EYT_SESSION_ID=morning-brief-20260217
+export EYT_RESULT_DIR=/tmp/eyt-results
 ```
-
-또는 스킬 전용 변수(`EYT_HEADLINE_LOG_DIR`, `EYT_HEADLINE_SESSION_ID`)를 사용할 수 있습니다.
 
 ```bash
 eyt-headline generate \
@@ -59,7 +62,7 @@ eyt-headline generate
 | `EYT_HEADLINE_TARGET_CHANNELS` | _empty_ | 채널 토큰 목록(쉼표 구분, 채널명/채널코드/핸들) |
 | `EYT_HEADLINE_CHANNEL_VIDEO_LIMIT` | `5` | 채널별 수집 영상 수 |
 | `EYT_HEADLINE_LOG_DIR` | `logs` | 로그 디렉터리 (`EYT_LOG_DIR` 공통 변수도 지원) |
-| `EYT_HEADLINE_SESSION_ID` | 날짜(UTC) | 세션 식별자 (`EYT_SESSION_ID` 공통 변수도 지원) |
+| `EYT_HEADLINE_RESULT_DIR` | `results` | 결과 파일 디렉터리 (`EYT_RESULT_DIR` 공통 변수도 지원) |
 | `EYT_HEADLINE_MOCK_TRANSCRIPT_TEXT` | _empty_ | 테스트용 강제 자막 텍스트 |
 
 ## Output Status
